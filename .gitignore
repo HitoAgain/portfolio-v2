@@ -1,0 +1,4 @@
+.claude/
+.impeccable/hook.cache.json
+# Real Firebase keys stay on this computer only
+assets/firebase-config.js

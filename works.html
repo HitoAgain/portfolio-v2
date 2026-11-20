@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ผลงาน | อาลีฟ เกษมสวัสดิ์</title>
+<meta name="description" content="ผลงาน การแข่งขัน รางวัล และเกียรติบัตรของอาลีฟ เกษมสวัสดิ์ (Arlif Kaseamsawat)">
+<meta name="theme-color" content="#2147c9">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="th_TH">
+<meta property="og:title" content="ผลงาน | อาลีฟ เกษมสวัสดิ์">
+<meta property="og:description" content="ผลงาน การแข่งขัน รางวัล และเกียรติบัตรของอาลีฟ เกษมสวัสดิ์">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300..700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-lite.js">
+<script src="assets/site.js" defer></script>
+<script type="module" src="assets/works.js"></script>
+<script type="speculationrules">{"prefetch":[{"where":{"href_matches":"/*.html"},"eagerness":"moderate"}]}</script>
+</head>
+<body>
+<a class="skip" href="#main">ข้ามไปที่เนื้อหา</a>
+<header class="site-head">
+<div class="wrap head-in">
+  <a class="brand" href="index.html">Portfolio</a>
+  <nav class="nav" aria-label="เมนูหลัก">
+    <a href="index.html">หน้าแรก<span class="sl" aria-hidden="true"></span></a>
+    <a href="works.html" aria-current="page">ผลงาน<span class="sl" aria-hidden="true"></span></a>
+    <a href="about.html">เกี่ยวกับ<span class="sl" aria-hidden="true"></span></a>
+    <a href="contact.html">ติดต่อ<span class="sl" aria-hidden="true"></span></a>
+  </nav>
+</div>
+</header>
+
+<main id="main" class="page wrap">
+  <h1 class="page-title">ผลงาน</h1>
+
+  <div id="admin-bar" class="admin-bar" hidden>
+    <button id="add-work" class="btn btn-solid btn-small" type="button">เพิ่มผลงาน</button>
+    <button id="logout" class="btn btn-small btn-quiet" type="button">ออกจากโหมดแอดมิน</button>
+  </div>
+
+  <div id="works" class="works"><noscript><p class="empty">เปิด JavaScript เพื่อดูผลงาน</p></noscript></div>
+</main>
+
+<footer class="site-foot wrap">
+  <p>© <span data-year>2026</span> อาลีฟ เกษมสวัสดิ์</p>
+</footer>
+
+<button id="admin-fab" class="admin-fab" type="button" aria-label="เข้าสู่โหมดแอดมิน" title="แอดมิน">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.6 4.6 5.5V11c0 4.6 3 8.6 7.4 10 4.4-1.4 7.4-5.4 7.4-10V5.5Z"/><circle cx="12" cy="10" r="2.4"/><path d="M8 17c.9-1.8 2.3-2.7 4-2.7s3.1.9 4 2.7"/></svg>
+</button>
+
+<dialog id="login-dlg" class="dlg dlg-sm" aria-labelledby="login-title">
+  <form id="login-form" class="dlg-inner" novalidate>
+    <h2 id="login-title" class="dlg-title">เข้าสู่โหมดแอดมิน</h2>
+    <p class="dlg-sub">ใส่รหัสผ่านเพื่อเพิ่มหรือแก้ไขผลงาน</p>
+    <div class="field">
+      <label for="pw">รหัสผ่าน</label>
+      <input id="pw" class="input" type="password" autocomplete="current-password" required>
+    </div>
+    <p id="login-error" class="form-error" role="alert"></p>
+    <div class="dlg-actions">
+      <button type="button" class="btn btn-quiet" data-close>ยกเลิก</button>
+      <button type="submit" class="btn btn-solid">เข้าสู่ระบบ</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="work-dlg" class="dlg" aria-labelledby="work-dlg-title">
+  <form id="work-form" class="dlg-inner" novalidate>
+    <div class="dlg-head">
+      <h2 id="work-dlg-title" class="dlg-title">เพิ่มผลงาน</h2>
+      <button type="button" class="icon-btn" data-close aria-label="ปิด"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <div class="field">
+      <label for="f-title">ชื่อผลงานหรือการแข่งขัน</label>
+      <input id="f-title" class="input" maxlength="160" required autofocus>
+    </div>
+    <div class="two">
+      <div class="field">
+        <label for="f-rank">อันดับหรือรางวัลที่ได้ <span class="hint">ไม่บังคับ</span></label>
+        <input id="f-rank" class="input" maxlength="80" placeholder="เช่น ชนะเลิศ, เหรียญทอง">
+      </div>
+      <div class="field">
+        <label for="f-date">วันที่</label>
+        <input id="f-date" class="input" type="date" required>
+      </div>
+    </div>
+    <div class="field">
+      <label for="f-details">รายละเอียด</label>
+      <textarea id="f-details" class="input" rows="5" placeholder="ทำอะไร แข่งที่ไหน ได้เรียนรู้อะไร"></textarea>
+    </div>
+    <div class="field">
+      <label for="f-links">ลิงก์เพิ่มเติม <span class="hint">หนึ่งบรรทัดต่อหนึ่งลิงก์</span></label>
+      <textarea id="f-links" class="input" rows="2" placeholder="https://"></textarea>
+    </div>
+    <div class="field">
+      <span class="label">รูปภาพผลงาน</span>
+      <input id="f-images" class="sr-only" type="file" accept="image/*" multiple>
+      <label for="f-images" class="btn btn-small">เลือกรูปภาพ</label>
+      <div id="prev-images" class="previews"></div>
+    </div>
+    <div class="field">
+      <span class="label">รูปเกียรติบัตร</span>
+      <input id="f-certs" class="sr-only" type="file" accept="image/*" multiple>
+      <label for="f-certs" class="btn btn-small">เลือกรูปเกียรติบัตร</label>
+      <div id="prev-certs" class="previews"></div>
+    </div>
+    <p id="form-error" class="form-error" role="alert"></p>
+    <div class="dlg-actions">
+      <button type="button" class="btn btn-quiet" data-close>ยกเลิก</button>
+      <button id="save-work" type="submit" class="btn btn-solid">เพิ่มผลงาน</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="view-dlg" class="dlg" aria-labelledby="view-title">
+  <div class="dlg-bar"><button type="button" class="icon-btn" data-close aria-label="ปิด"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div id="view-body" class="dlg-inner"></div>
+</dialog>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

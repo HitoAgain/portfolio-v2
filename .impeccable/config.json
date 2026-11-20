@@ -1,0 +1,53 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "assets/style.css"
+        ],
+        "createdAt": "2026-11-20T18:52:43.758Z",
+        "reason": "Claude design decision: the hero name's background-clip text is a satin-stitch thread texture (embroidered name on a Thai school shirt), the page's one signature element, not decorative gradient text"
+      },
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-11-20T18:53:36.521Z",
+        "reason": "Claude design decision: inherited from assets/style.css, where the hero name's background-clip text is a satin-stitch thread texture (embroidered school-shirt name), the page's one signature element"
+      },
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "about.html"
+        ],
+        "createdAt": "2026-11-20T18:53:36.736Z",
+        "reason": "Claude design decision: inherited from assets/style.css, where the hero name's background-clip text is a satin-stitch thread texture (embroidered school-shirt name), the page's one signature element"
+      },
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "contact.html"
+        ],
+        "createdAt": "2026-11-20T18:53:36.956Z",
+        "reason": "Claude design decision: inherited from assets/style.css, where the hero name's background-clip text is a satin-stitch thread texture (embroidered school-shirt name), the page's one signature element"
+      },
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "works.html"
+        ],
+        "createdAt": "2026-11-20T18:53:37.184Z",
+        "reason": "Claude design decision: inherited from assets/style.css, where the hero name's background-clip text is a satin-stitch thread texture (embroidered school-shirt name), the page's one signature element"
+      }
+    ]
+  }
+}
