@@ -131,14 +131,17 @@ body:has(.admin-fab:not([hidden])) .site-foot { padding-bottom: 5rem; } /* keep 
 .btn:disabled { opacity: .55; cursor: progress; }
 
 /* ---------- Home ---------- */
-.home main { display: grid; align-content: center; }
-.hero { display: grid; align-items: center; gap: 2.5rem 3rem; padding-block: clamp(2.5rem, 8vh, 6rem) clamp(3rem, 10vh, 7rem); }
+.home main { display: grid; }
+/* The photo stands on the footer line: no bottom padding, photo column aligned to the bottom. */
+.hero { display: grid; align-items: end; gap: 2rem 3rem; padding-top: clamp(2rem, 6vh, 4rem); }
+.hero-text { align-self: center; }
 @media (min-width: 52rem) {
   .hero { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+  .hero-text { padding-bottom: clamp(2rem, 8vh, 5rem); }
   .hero .name { font-size: clamp(2.4rem, 5.6vw, 5.25rem); } /* leaves room for the photo */
 }
 /* Photo on a stitched circle; hovering swaps to the second pose */
-.hero-photo { position: relative; justify-self: center; width: min(78%, 24rem); }
+.hero-photo { position: relative; justify-self: center; width: min(85%, 30rem, calc((100dvh - 10rem) * .75)); } /* as tall as the screen allows */
 .hero-photo::before {
   content: "";
   position: absolute;
@@ -212,9 +215,13 @@ body:has(.admin-fab:not([hidden])) .site-foot { padding-bottom: 5rem; } /* keep 
   /* the hello pops up right after the name is sewn */
   .js .bubble { opacity: 0; transform-origin: 1.4rem 100%; animation: pop .6s cubic-bezier(.3, 1.8, .5, 1) 2.6s forwards; }
   .js .en-name, .js .actions { opacity: 0; animation: rise .65s cubic-bezier(.3, 1.6, .5, 1) 2.7s forwards; }
+  /* the photo pops up with the hello, then its stitched circle turns slowly */
+  .js .hero-photo { opacity: 0; transform-origin: 50% 100%; animation: rise .8s cubic-bezier(.3, 1.5, .5, 1) 2.6s forwards; }
+  .hero-photo::before { animation: spin 50s linear infinite; }
   .js .actions { animation-delay: 2.82s; }
-  .js:not(.fr) .sew-text, .js:not(.fr) .needle, .js:not(.fr) .bubble, .js:not(.fr) .en-name, .js:not(.fr) .actions { animation-play-state: paused; }
+  .js:not(.fr) .sew-text, .js:not(.fr) .needle, .js:not(.fr) .bubble, .js:not(.fr) .en-name, .js:not(.fr) .actions, .js:not(.fr) .hero-photo { animation-play-state: paused; }
 }
+@keyframes spin { to { rotate: 360deg; } }
 @keyframes rise { from { opacity: 0; transform: translateY(16px) scale(.94); } to { opacity: 1; transform: none; } }
 @keyframes pop { from { opacity: 0; transform: translateY(12px) scale(.4); } to { opacity: 1; transform: none; } }
 @keyframes sew { to { clip-path: inset(-.4em 0 -.4em -.1em); } }
@@ -284,15 +291,15 @@ body:has(.admin-fab:not([hidden])) .site-foot { padding-bottom: 5rem; } /* keep 
   display: grid;
   place-items: center;
   flex: none;
-  width: 24cqi;
-  aspect-ratio: 4 / 5;
+  width: 22cqi;
+  aspect-ratio: 268 / 430; /* the whole photo, head to waist */
   border-radius: 2.5cqi;
   background: var(--thread-soft);
   color: var(--thread);
   font-size: 11cqi;
   font-weight: 700;
-  object-fit: cover;
-  object-position: top;
+  object-fit: contain;
+  object-position: bottom;
 }
 .id-info { min-width: 0; }
 .id-name { margin: 0; font-size: max(1.125rem, 5.4cqi); line-height: 1.25; }

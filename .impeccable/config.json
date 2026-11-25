@@ -56,6 +56,15 @@
         ],
         "createdAt": "2026-11-25T14:41:13.343Z",
         "reason": "Claude measured in browser: every .contact row has 28px padding-top/bottom between its border and content; detector reads the row's children as flush"
+      },
+      {
+        "rule": "buried-raster",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-11-25T14:49:52.300Z",
+        "reason": "Claude verified in browser: .hero-photo .alt (me-hover.webp) is opacity 0 by design and fades to 1 on hover, the user-requested pose swap"
       }
     ]
   }
