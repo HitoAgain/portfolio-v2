@@ -140,7 +140,7 @@ body:has(.admin-fab:not([hidden])) .site-foot { padding-bottom: 5rem; } /* keep 
   .hero-text { padding-bottom: clamp(2rem, 8vh, 5rem); }
   .hero .name { font-size: clamp(2.4rem, 5.6vw, 5.25rem); } /* leaves room for the photo */
 }
-/* Photo in front of a slowly turning stitched square; hovering swaps to the second pose */
+/* Photo in front of a slowly turning stitched square */
 .hero-photo {
   position: relative;
   justify-self: center;
@@ -161,10 +161,7 @@ body:has(.admin-fab:not([hidden])) .site-foot { padding-bottom: 5rem; } /* keep 
   translate: -50% 0;
   rotate: 8deg;
 }
-.hero-photo img { position: relative; display: block; width: 100%; height: auto; transition: opacity .35s var(--ease); }
-.hero-photo .alt { position: absolute; inset: 0; opacity: 0; }
-.hero-photo:hover .alt { opacity: 1; }
-.hero-photo:hover img:not(.alt) { opacity: 0; }
+.hero-photo img { position: relative; display: block; width: 100%; height: auto; }
 .hello { margin: 0 0 .9rem; }
 .bubble {
   position: relative;
