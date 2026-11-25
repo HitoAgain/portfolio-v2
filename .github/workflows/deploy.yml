@@ -1,0 +1,46 @@
+# Publishes the site to GitHub Pages on every push to main.
+# assets/firebase-config.js is not in git (keeps the key out of the repo); it is written here from the
+# FIREBASE_CONFIG_JS repository secret, which holds the whole file.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Write Firebase config from secret
+        env:
+          FIREBASE_CONFIG_JS: ${{ secrets.FIREBASE_CONFIG_JS }}
+        run: |
+          if [ -z "$FIREBASE_CONFIG_JS" ]; then echo "::error::Add the FIREBASE_CONFIG_JS repository secret"; exit 1; fi
+          printf '%s\n' "$FIREBASE_CONFIG_JS" > assets/firebase-config.js
+
+      - name: Collect only the website files
+        run: |
+          mkdir _site
+          cp -r index.html works.html about.html contact.html assets _site/
+
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v5
