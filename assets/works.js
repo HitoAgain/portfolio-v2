@@ -7,12 +7,15 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/fireba
 import {
   getFirestore, connectFirestoreEmulator, collection, doc, getDoc, getDocs, setDoc, writeBatch,
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore-lite.js';
+import { findDate } from './cert-date.js';
 
 // firebase-config.js is git-ignored (keeps keys off GitHub); without it the page still loads, just unconnected.
 const { firebaseConfig, adminEmail } = await import('./firebase-config.js')
   .catch(() => ({ firebaseConfig: {}, adminEmail: '' }));
 const AUTH_SDK ='https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
 const MAX_DOC_CHARS = 950_000; // Firestore documents max out at 1 MiB
+const TESSERACT_URL = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js'; // OCR, loaded only by the admin
+const LINK_TYPES = ['ลิงก์นำเสนอ', 'วิดีโอ', 'เอกสาร / รายงาน', 'เว็บไซต์ / โปรเจกต์', 'โพสต์ / ข่าว', 'อื่นๆ'];
 
 // Local testing only: works.html?emulator on localhost talks to Firebase emulators, never the real project.
 const useEmulator = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && new URLSearchParams(location.search).has('emulator');
@@ -41,6 +44,13 @@ const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(
 const withScheme = (u) => (/^[a-z][\w+.-]*:/i.test(u) ? u : `https://${u}`);
 const safeUrl = (u) => { try { return ['http:', 'https:'].includes(new URL(u).protocol); } catch { return false; } };
 const prettyUrl = (u) => u.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+const toLink = (l) => (typeof l === 'string' ? { label: 'ลิงก์', url: l } : l); // older works saved plain URLs
+const guessLinkType = (u) => (
+  /youtu\.?be|vimeo|tiktok|\/videos?\//i.test(u) ? 'วิดีโอ'
+    : /canva\.|docs\.google\.com\/presentation|slides|pitch\.com|prezi|gamma\.app/i.test(u) ? 'ลิงก์นำเสนอ'
+      : /docs\.google\.com\/document|drive\.google|\.pdf($|\?)/i.test(u) ? 'เอกสาร / รายงาน'
+        : /facebook|instagram|x\.com|twitter|line\.me/i.test(u) ? 'โพสต์ / ข่าว'
+          : /github|vercel|netlify|\.web\.app|sites\.google/i.test(u) ? 'เว็บไซต์ / โปรเจกต์' : null);
 
 let isAdmin = false;
 let works = [];
@@ -132,16 +142,17 @@ function render() {
   for (const [y, items] of groups) {
     const sec = el('section', { className: 'year-group' },
       el('h2', { className: 'year', id: `y${y}` }, `พ.ศ. ${y}`, el('small', { textContent: `${items.length} รายการ` })),
-      ...items.map(workRow));
+      el('div', { className: 'cards' }, ...items.map(workCard)));
     sec.setAttribute('aria-labelledby', `y${y}`);
     listEl.append(sec);
   }
 }
 
-function workRow(w) {
+function workCard(w) {
   const open = el('button', { type: 'button', className: 'work-open', textContent: w.title });
   open.addEventListener('click', () => openView(w));
   const body = el('div', { className: 'work-body' },
+    el('time', { className: 'work-date', dateTime: w.date, textContent: dateShort.format(parseDate(w.date)) }),
     el('h3', { className: 'work-title' }, open),
     w.rank && el('span', { className: 'patch', textContent: w.rank }),
     w.details && el('p', { className: 'work-excerpt', textContent: w.details }));
@@ -152,43 +163,84 @@ function workRow(w) {
     del.addEventListener('click', () => removeWork(w));
     body.append(el('div', { className: 'work-admin' }, edit, del));
   }
-  const thumb = w.thumb && el('img', { className: 'work-thumb', src: w.thumb, alt: '', loading: 'lazy', decoding: 'async', width: 320, height: 240 });
-  const time = el('time', { className: 'work-date', dateTime: w.date, textContent: dateShort.format(parseDate(w.date)) });
-  return el('article', { className: thumb ? 'work' : 'work no-thumb' }, time, body, thumb);
+  if (!w.thumb) return el('article', { className: 'work' }, body);
+  const img = el('img', { className: 'work-thumb', src: w.thumb, alt: '', loading: 'lazy', decoding: 'async', width: 480, height: 360 });
+  const media = el('div', { className: 'work-media' }, img);
+  const card = el('article', { className: 'work' }, media, body);
+  const ids = [...(w.images ?? []), ...(w.certs ?? [])];
+  if (ids.length > 1) cyclePhotos(w, ids, card, media, img);
+  return card;
+}
+
+// Hovering a card flips through every photo of that work. Photos are fetched on first hover
+// and cached, so opening the work afterwards shows them instantly.
+function cyclePhotos(w, ids, card, media, img) {
+  const dots = el('div', { className: 'work-dots' }, ...ids.map((_, k) => el('i', { className: k ? '' : 'on' })));
+  dots.setAttribute('aria-hidden', 'true');
+  media.append(dots);
+  let srcs = null, timer = null, n = 0;
+  const show = (k) => {
+    n = k;
+    img.classList.add('swap');
+    setTimeout(() => { img.src = k ? srcs[k] : w.thumb; img.classList.remove('swap'); }, 150);
+    [...dots.children].forEach((d, i) => d.classList.toggle('on', i === k));
+  };
+  card.addEventListener('mouseenter', async () => {
+    srcs ??= await fetchImages(w.id, ids).then((items) => items.map((i) => i.src)).catch(() => null);
+    if (!srcs || srcs.length < 2 || !card.matches(':hover') || timer) return;
+    const next = () => show((n + 1) % srcs.length);
+    next();
+    timer = setInterval(next, 1100);
+  });
+  card.addEventListener('mouseleave', () => { clearInterval(timer); timer = null; if (n) show(0); });
 }
 
 // ---------- Detail view ----------
 const viewDlg = $('#view-dlg'), viewBody = $('#view-body');
 let viewToken = 0;
 const section = (title, content) => el('section', { className: 'view-sec' }, el('h3', { textContent: title }), content);
-const gallery = (srcs, cls, label) => el('div', { className: cls }, ...srcs.map((src, i) => {
-  const b = el('button', { type: 'button', className: 'shot', title: 'เปิดรูปขนาดเต็มในแท็บใหม่' },
-    el('img', { src, alt: `${label} ${i + 1}`, loading: 'lazy', decoding: 'async' }));
-  b.addEventListener('click', () => openFull(src));
-  return b;
-}));
 
+// One wide card: a big photo with a strip of all photos and certificates on the left, text on the right.
 function openView(w) {
   const token = ++viewToken;
-  const photos = (title, ids, cls, label) => {
-    if (!ids?.length) return null;
-    const box = el('p', { className: 'img-loading', textContent: 'กำลังโหลดรูป…' });
-    fetchImages(w.id, ids)
-      .then((items) => { if (token === viewToken) box.replaceWith(gallery(items.map((i) => i.src), cls, label)); })
-      .catch(() => { box.textContent = 'โหลดรูปไม่สำเร็จ ปิดแล้วเปิดรายการนี้ใหม่อีกครั้ง'; });
-    return section(title, box);
-  };
-  const links = (w.links || []).filter(safeUrl);
-  viewBody.replaceChildren(...[
+  const ids = [...(w.images ?? []), ...(w.certs ?? [])];
+  const certIds = new Set(w.certs ?? []);
+  const links = (w.links || []).map(toLink).filter((l) => safeUrl(l.url));
+  const info = el('div', { className: 'view-info' }, ...[
     el('time', { className: 'view-date', dateTime: w.date, textContent: dateLong.format(parseDate(w.date)) }),
     el('h2', { className: 'view-title', id: 'view-title', textContent: w.title }),
     w.rank && el('span', { className: 'patch', textContent: w.rank }),
     w.details && el('p', { className: 'view-details', textContent: w.details }),
-    photos('รูปภาพ', w.images, 'gallery', `รูปผลงาน ${w.title}`),
-    photos('เกียรติบัตร', w.certs, 'gallery certs', `เกียรติบัตร ${w.title}`),
-    links.length && section('ลิงก์เพิ่มเติม', el('ul', { className: 'links' }, ...links.map((u) =>
-      el('li', {}, el('a', { href: u, target: '_blank', rel: 'noopener noreferrer', textContent: prettyUrl(u) }))))),
+    links.length && section('ลิงก์เพิ่มเติม', el('ul', { className: 'links' }, ...links.map((l) =>
+      el('li', {}, el('small', { textContent: l.label }),
+        el('a', { href: l.url, target: '_blank', rel: 'noopener noreferrer', textContent: prettyUrl(l.url) }))))),
   ].filter(Boolean));
+
+  let media = null;
+  if (ids.length) {
+    media = el('div', { className: 'view-media' }, el('p', { className: 'img-loading', textContent: 'กำลังโหลดรูป…' }));
+    fetchImages(w.id, ids).then((items) => {
+      if (token !== viewToken) return;
+      if (!items.length) { media.remove(); return; }
+      const altOf = (it, k) => `${certIds.has(it.id) ? 'เกียรติบัตร' : 'รูปผลงาน'} ${w.title} ${k + 1}`;
+      const mainImg = el('img', { src: items[0].src, alt: altOf(items[0], 0) });
+      const main = el('button', { type: 'button', className: 'view-main', title: 'เปิดรูปขนาดเต็มในแท็บใหม่' }, mainImg);
+      main.addEventListener('click', () => openFull(mainImg.src));
+      const strip = items.length > 1 && el('div', { className: 'view-thumbs' }, ...items.map((it, k) => {
+        const b = el('button', { type: 'button', className: k ? 'vt' : 'vt on' },
+          el('img', { src: it.src, alt: '' }), certIds.has(it.id) && el('span', { textContent: 'เกียรติบัตร' }));
+        b.setAttribute('aria-label', altOf(it, k));
+        b.addEventListener('click', () => {
+          mainImg.src = it.src;
+          mainImg.alt = altOf(it, k);
+          strip.querySelectorAll('.vt').forEach((x) => x.classList.toggle('on', x === b));
+        });
+        return b;
+      }));
+      media.replaceChildren(...[main, strip].filter(Boolean));
+    }).catch(() => { media.firstChild.textContent = 'โหลดรูปไม่สำเร็จ ปิดแล้วเปิดรายการนี้ใหม่อีกครั้ง'; });
+  }
+  viewBody.replaceChildren(el('div', { className: media ? 'view has-media' : 'view' }, ...[media, info].filter(Boolean)));
   viewDlg.showModal();
   viewDlg.scrollTop = 0;
 }
@@ -266,7 +318,10 @@ async function openForm(w = null) {
   $('#f-rank').value = w?.rank ?? '';
   $('#f-date').value = w?.date ?? today();
   $('#f-details').value = w?.details ?? '';
-  $('#f-links').value = (w?.links ?? []).join('\n');
+  linkRows.replaceChildren();
+  (w?.links ?? []).map(toLink).forEach(addLinkRow);
+  dateTouched = Boolean(w); // never overwrite a saved date with an OCR guess
+  dateHint.hidden = true;
   imgs = [];
   certs = [];
   formErr.textContent = '';
@@ -297,7 +352,80 @@ function drawPreviews() {
       return el('div', { className: 'preview' }, el('img', { src: item.src, alt: `${label}ที่ ${i + 1}` }), rm);
     }));
   }
+  scanBtn.hidden = !certs.length;
 }
+
+// ---------- Links: each one has a type (presentation, video, …), guessed from the URL ----------
+const linkRows = $('#link-rows');
+function addLinkRow(link = { label: 'อื่นๆ', url: '' }) {
+  const types = [...new Set([...LINK_TYPES, link.label])];
+  const sel = el('select', { className: 'input' }, ...types.map((t) => el('option', { value: t, textContent: t, selected: t === link.label })));
+  const url = el('input', { className: 'input', type: 'url', inputMode: 'url', placeholder: 'https://', value: link.url });
+  const rm = el('button', { type: 'button', className: 'icon-btn', textContent: '×' });
+  sel.setAttribute('aria-label', 'ประเภทลิงก์');
+  url.setAttribute('aria-label', 'ที่อยู่ลิงก์');
+  rm.setAttribute('aria-label', 'ลบลิงก์นี้');
+  const row = el('div', { className: 'link-row' }, sel, url, rm);
+  let picked = Boolean(link.url); // a type chosen by hand (or saved before) is never replaced by a guess
+  sel.addEventListener('change', () => { picked = true; });
+  url.addEventListener('input', () => { const g = !picked && guessLinkType(url.value); if (g) sel.value = g; });
+  rm.addEventListener('click', () => row.remove());
+  linkRows.append(row);
+  return url;
+}
+$('#add-link').addEventListener('click', () => addLinkRow().focus());
+
+// ---------- Date: read it off the certificate (OCR), the admin checks it against the picture ----------
+const dateInput = $('#f-date'), scanBtn = $('#scan-date'), dateHint = $('#date-hint');
+let dateTouched = false, ocrWorker = null;
+dateInput.addEventListener('input', () => { dateTouched = true; });
+
+function showHint(msg, ...buttons) {
+  dateHint.hidden = false;
+  dateHint.replaceChildren(el('span', { textContent: msg }), ...buttons);
+}
+function hintButton(label, onClick) {
+  const b = el('button', { type: 'button', className: 'btn btn-small', textContent: label });
+  b.addEventListener('click', onClick);
+  return b;
+}
+
+async function readText(src) {
+  if (!ocrWorker) {
+    if (!window.Tesseract) {
+      await new Promise((resolve, reject) => document.head.append(Object.assign(document.createElement('script'), { src: TESSERACT_URL, onload: resolve, onerror: reject })));
+    }
+    ocrWorker = await window.Tesseract.createWorker('tha+eng');
+  }
+  return (await ocrWorker.recognize(src)).data.text;
+}
+
+async function scanDate() {
+  const src = certs.at(-1)?.src; // the certificate added last
+  if (!src) return;
+  const check = hintButton('ดูเกียรติบัตร', () => openFull(src));
+  scanBtn.disabled = true;
+  showHint('กำลังอ่านวันที่จากเกียรติบัตร… ครั้งแรกอาจใช้เวลาประมาณ 10 วินาที');
+  let found;
+  try {
+    found = findDate(await readText(src));
+  } catch {
+    showHint('อ่านเกียรติบัตรไม่สำเร็จ ตรวจการเชื่อมต่ออินเทอร์เน็ตแล้วลองอีกครั้ง');
+    return;
+  } finally {
+    scanBtn.disabled = false;
+  }
+  if (!found) { showHint('ไม่พบวันที่ในเกียรติบัตร เลือกวันที่เอง', check); return; }
+  const label = dateLong.format(parseDate(found.iso));
+  if (!dateTouched) {
+    dateInput.value = found.iso;
+    showHint(`ใส่วันที่จากเกียรติบัตรแล้ว: ${label} ตรวจกับรูปอีกครั้ง`, check);
+  } else {
+    const use = hintButton('ใช้วันที่นี้', () => { dateInput.value = found.iso; dateHint.hidden = true; });
+    showHint(`พบในเกียรติบัตร: ${label}`, use, check);
+  }
+}
+scanBtn.addEventListener('click', scanDate);
 
 // Shrink photos before upload, stepping down until one fits in a single Firestore document.
 async function compress(blob, max, quality) {
@@ -330,6 +458,7 @@ async function addFiles(input, arr) {
   busy(false);
   formErr.textContent = failed.length ? `เปิดไฟล์นี้ไม่ได้: ${failed.join(', ')} ใช้ไฟล์ JPG หรือ PNG แทน` : '';
   drawPreviews();
+  if (arr === certs && files.length > failed.length) scanDate();
 }
 $('#f-images').addEventListener('change', (e) => addFiles(e.target, imgs));
 $('#f-certs').addEventListener('change', (e) => addFiles(e.target, certs));
@@ -344,9 +473,14 @@ form.addEventListener('submit', async (e) => {
     shake(form);
     return;
   }
-  const links = $('#f-links').value.split('\n').map((s) => s.trim()).filter(Boolean).map(withScheme);
-  const bad = links.find((u) => !safeUrl(u));
-  if (bad) { formErr.textContent = `ลิงก์นี้ใช้ไม่ได้: ${bad} ลิงก์ต้องขึ้นต้นด้วย http:// หรือ https://`; $('#f-links').focus(); return; }
+  const rows = [...linkRows.children].map((row) => ({ sel: row.children[0], url: row.children[1] }));
+  const links = rows.filter((r) => r.url.value.trim()).map((r) => ({ label: r.sel.value, url: withScheme(r.url.value.trim()) }));
+  const bad = links.findIndex((l) => !safeUrl(l.url));
+  if (bad >= 0) {
+    formErr.textContent = `ลิงก์นี้ใช้ไม่ได้: ${links[bad].url} ลิงก์ต้องขึ้นต้นด้วย http:// หรือ https://`;
+    rows.filter((r) => r.url.value.trim())[bad].url.focus();
+    return;
+  }
 
   const wasEditing = Boolean(editing);
   const workRef = doc(workCol(), workId);

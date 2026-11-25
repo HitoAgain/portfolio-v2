@@ -5,7 +5,23 @@
   const hadBirthday = now >= new Date(now.getFullYear(), 1, 9); // born 9 Feb 2009
   const age = now.getFullYear() - 2009 - (hadBirthday ? 0 : 1);
   document.querySelectorAll('[data-age]').forEach((el) => { el.textContent = age; });
-  document.querySelectorAll('[data-year]').forEach((el) => { el.textContent = now.getFullYear(); });
+
+  // Typewriter titles: <span class="type" data-type="text">. Thai is split into whole characters (vowel marks stay attached).
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const chars = (s) => (Intl.Segmenter ? [...new Intl.Segmenter('th', { granularity: 'grapheme' }).segment(s)].map((x) => x.segment) : [...s]);
+    document.querySelectorAll('[data-type]').forEach((el) => {
+      const parts = chars(el.dataset.type);
+      let i = 0;
+      el.textContent = '';
+      el.classList.add('typing');
+      const tick = () => {
+        el.textContent += parts[i++];
+        if (i < parts.length) setTimeout(tick, 90 + Math.random() * 90); // uneven, like real keystrokes
+        else el.classList.add('typed');
+      };
+      setTimeout(tick, 350);
+    });
+  }
 
   // Hero: start sewing once the Thai font is in (or after 1.5 s), once per visit.
   if (document.querySelector('.sew')) {
