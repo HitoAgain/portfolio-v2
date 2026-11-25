@@ -133,10 +133,20 @@ body:has(.admin-fab:not([hidden])) .site-foot { padding-bottom: 5rem; } /* keep 
 /* ---------- Home ---------- */
 .home main { display: grid; align-content: center; }
 .hero { padding-block: clamp(3rem, 10vh, 7rem) clamp(4rem, 12vh, 8rem); }
-.hello { margin: 0; color: var(--slate); font-size: clamp(1.125rem, 2vw, 1.375rem); }
+.hello { margin: 0 0 .9rem; }
+.bubble {
+  position: relative;
+  display: inline-block;
+  padding: .25rem .95rem;
+  border-radius: 999px;
+  background: var(--thread);
+  color: #fff;
+  font-size: clamp(1rem, 1.6vw, 1.125rem);
+  font-weight: 600;
+}
+.bubble::after { content: ""; position: absolute; left: 1.4rem; bottom: -7px; border: 8px solid transparent; border-bottom: 0; border-top-color: var(--thread); }
 .name { margin: 0; font-size: clamp(2.4rem, 10.5vw, 7.25rem); font-weight: 700; line-height: 1.2; letter-spacing: -.01em; }
 .en-name { margin: .1rem 0 0; font-size: clamp(1.125rem, 2.4vw, 1.625rem); font-weight: 500; letter-spacing: .01em; }
-.intro { max-width: 32rem; margin: 1.75rem 0 0; color: var(--slate); font-size: 1.125rem; }
 .actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 2.25rem; }
 
 /* The name is satin-stitched in blue thread, like the name on a school shirt. */
@@ -169,15 +179,18 @@ body:has(.admin-fab:not([hidden])) .site-foot { padding-bottom: 5rem; } /* keep 
 .needle::before { content: ""; position: absolute; left: 50%; top: 5%; width: 40%; height: 9%; border-radius: 999px; background: var(--shirt); transform: translateX(-50%); }
 
 @media (prefers-reduced-motion: no-preference) {
-  .js:not(.sewn) .sew-text { clip-path: inset(-.4em 100% -.4em -.1em); animation: sew 2.2s steps(26, end) .3s forwards; }
-  .js:not(.sewn) .needle {
+  .js .sew-text { clip-path: inset(-.4em 100% -.4em -.1em); animation: sew 2.2s steps(26, end) .3s forwards; }
+  .js .needle {
     animation:
       needle-run 2.2s steps(26, end) .3s forwards,
       needle-bob 85ms linear .3s 26,
       needle-out .4s ease 2.6s forwards;
   }
-  .js:not(.fr) .sew-text, .js:not(.fr) .needle { animation-play-state: paused; }
+  /* the hello pops up right after the name is sewn */
+  .js .bubble { opacity: 0; transform-origin: 1.4rem 100%; animation: pop .6s cubic-bezier(.3, 1.8, .5, 1) 2.6s forwards; }
+  .js:not(.fr) .sew-text, .js:not(.fr) .needle, .js:not(.fr) .bubble { animation-play-state: paused; }
 }
+@keyframes pop { from { opacity: 0; transform: translateY(12px) scale(.4); } to { opacity: 1; transform: none; } }
 @keyframes sew { to { clip-path: inset(-.4em 0 -.4em -.1em); } }
 @keyframes needle-run { from { left: 0; opacity: 1; } to { left: 100%; opacity: 1; } }
 @keyframes needle-bob { 50% { translate: 0 -14%; } }
@@ -198,14 +211,22 @@ body:has(.admin-fab:not([hidden])) .site-foot { padding-bottom: 5rem; } /* keep 
   animation: caret .9s steps(1) infinite;
 }
 .type.typed::after { animation: caret .9s steps(1) 3 forwards; } /* blink a few times, then go away */
+.type .ch { display: inline-block; }
+.type.hop .ch { animation: hop .55s cubic-bezier(.3, 1.5, .5, 1) calc(var(--i) * 70ms); }
+@keyframes hop {
+  0%, 100% { transform: none; }
+  35% { transform: translateY(-.3em) rotate(-5deg); }
+  65% { transform: translateY(0) scale(1.08, .9); } /* little squash on landing */
+}
 @keyframes caret { 50% { opacity: 0; } 100% { opacity: 0; } }
 
 /* About: a landscape student ID card (real ID-card proportions) hanging on a lanyard */
 .about-page { overflow-x: clip; } /* a swinging card must not cause sideways scrolling */
-.lanyard { --strap: 90px; position: relative; margin-top: 1.5rem; }
+.lanyard { --strap: 130px; position: relative; margin-top: 1.5rem; }
 @media (min-width: 52rem) {
-  .about-page { display: grid; grid-template-columns: minmax(0, .8fr) minmax(34rem, 1.4fr); align-items: start; }
-  .lanyard { --strap: 170px; margin-top: calc(-1 * clamp(2.5rem, 8vh, 4.5rem)); } /* strap starts at the navbar */
+  .about-page { display: grid; grid-template-columns: minmax(0, .8fr) minmax(34rem, 1.4fr); grid-template-rows: auto 1fr; column-gap: 3rem; align-items: start; }
+  .skills { grid-column: 1; }
+  .lanyard { grid-column: 2; grid-row: 1 / span 2; --strap: 240px; margin-top: calc(-1 * clamp(2.5rem, 8vh, 4.5rem)); } /* strap starts at the navbar */
 }
 .id-card {
   position: relative;
@@ -247,7 +268,19 @@ body:has(.admin-fab:not([hidden])) .site-foot { padding-bottom: 5rem; } /* keep 
 }
 .id-info { min-width: 0; }
 .id-name { margin: 0; font-size: max(1.125rem, 5.4cqi); line-height: 1.25; }
-.id-en { margin: .1em 0 0; color: var(--slate); font-size: max(.8125rem, 2.8cqi); }
+.id-name .type { white-space: nowrap; min-height: 1.25em; } /* fixed height: the card doesn't jump while the name retypes */
+.id-school dd { display: flex; align-items: center; gap: 1.5cqi; }
+.id-school img { width: max(2.6rem, 10cqi); height: auto; flex: none; }
+.id-school span { display: grid; }
+
+/* Tech skills, in the left column next to the card */
+.skills { margin-top: 2.5rem; }
+.skills h2 { margin: 0; font-size: 1.375rem; line-height: 1.35; }
+.skill-group { margin-top: 1.25rem; }
+.skill-group h3 { margin: 0 0 .5rem; color: var(--slate); font-size: .9375rem; font-weight: 500; }
+.skill-list { display: flex; flex-wrap: wrap; gap: .45rem; margin: 0; padding: 0; list-style: none; }
+.skill-list li { padding: .25rem .85rem; border: 1.5px solid var(--seam); border-radius: 999px; background: var(--shirt); font-size: .9375rem; font-weight: 500; transition: border-color .2s, color .2s; }
+.skill-list li:hover { border-color: var(--thread); color: var(--thread-deep); }
 .id-facts { display: grid; grid-template-columns: repeat(2, auto); justify-content: start; gap: 1.8cqi 5cqi; margin: 3cqi 0 0; }
 .id-facts dt { color: var(--slate); font-size: max(.6875rem, 2.3cqi); line-height: 1.5; }
 .id-facts dd { margin: 0; font-size: max(.8125rem, 2.9cqi); font-weight: 600; line-height: 1.4; }
@@ -341,6 +374,10 @@ body:has(.admin-fab:not([hidden])) .site-foot { padding-bottom: 5rem; } /* keep 
 .chip[aria-pressed="true"] { border-color: var(--thread); background: var(--thread); color: #fff; }
 .chip[aria-pressed="true"] span { color: rgb(255 255 255 / .8); }
 .cards .empty { grid-column: 1 / -1; margin: 0; }
+.work.pinned { border-color: var(--thread); }
+.pin-badge { position: absolute; top: .6rem; right: .6rem; z-index: 2; display: grid; place-items: center; width: 2.1rem; height: 2.1rem; border-radius: 50%; background: var(--thread); color: #fff; box-shadow: 0 4px 10px -4px rgb(19 35 75 / .6); }
+.pin-badge svg { width: 1.1rem; height: 1.1rem; }
+.work.pinned:not(:has(.work-media)) .work-meta { padding-right: 2.6rem; } /* keep the badge off the category tag */
 .work-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .25rem .75rem; }
 .work-cat { padding: 0 .6rem; border-radius: 999px; background: var(--thread-soft); color: var(--thread-deep); font-size: .8125rem; font-weight: 600; line-height: 1.8; }
 

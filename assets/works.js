@@ -40,7 +40,8 @@ const listEl = $('#works'), bar = $('#admin-bar'), fab = $('#admin-fab');
 const dateShort = new Intl.DateTimeFormat('th-TH-u-ca-buddhist', { day: 'numeric', month: 'short', year: 'numeric' });
 const dateLong = new Intl.DateTimeFormat('th-TH-u-ca-buddhist', { day: 'numeric', month: 'long', year: 'numeric' });
 const parseDate = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
-const sorted = (list) => [...list].sort((a, b) => b.date.localeCompare(a.date));
+// Pinned works first, then newest first.
+const sorted = (list) => [...list].sort((a, b) => (!!b.pinned - !!a.pinned) || b.date.localeCompare(a.date));
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const withScheme = (u) => (/^[a-z][\w+.-]*:/i.test(u) ? u : `https://${u}`);
 const safeUrl = (u) => { try { return ['http:', 'https:'].includes(new URL(u).protocol); } catch { return false; } };
@@ -157,6 +158,13 @@ function render() {
   drawCards();
 }
 
+const PIN_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M15.5 2.5 21.5 8.5l-2 .9-3.6 3.6.3 4.5-1.6 1.6-4.2-4.2-5.3 5.3-1.1-1.1 5.3-5.3-4.2-4.2 1.6-1.6 4.5.3L14.6 4.5z"/></svg>';
+const pinBadge = () => {
+  const b = el('span', { className: 'pin-badge', title: 'ปักหมุด' });
+  b.innerHTML = PIN_SVG; // static markup, no user data
+  b.append(el('span', { className: 'sr-only', textContent: 'ปักหมุด' }));
+  return b;
+};
 const workMeta = (w) => el('div', { className: 'work-meta' },
   el('time', { className: 'work-date', dateTime: w.date, textContent: dateShort.format(parseDate(w.date)) }),
   w.category && el('span', { className: 'work-cat', textContent: w.category }));
@@ -172,14 +180,17 @@ function workCard(w) {
   if (isAdmin) {
     const edit = el('button', { type: 'button', className: 'btn btn-small', textContent: 'แก้ไข' });
     const del = el('button', { type: 'button', className: 'btn btn-small btn-danger', textContent: 'ลบ' });
+    const pin = el('button', { type: 'button', className: 'btn btn-small btn-quiet', textContent: w.pinned ? 'เลิกปักหมุด' : 'ปักหมุด' });
     edit.addEventListener('click', () => openForm(w));
     del.addEventListener('click', () => removeWork(w));
-    body.append(el('div', { className: 'work-admin' }, edit, del));
+    pin.addEventListener('click', () => togglePin(w, pin));
+    body.append(el('div', { className: 'work-admin' }, edit, pin, del));
   }
-  if (!w.thumb) return el('article', { className: 'work' }, body);
+  const cls = w.pinned ? 'work pinned' : 'work';
+  if (!w.thumb) return el('article', { className: cls }, w.pinned && pinBadge(), body);
   const img = el('img', { className: 'work-thumb', src: w.thumb, alt: '', loading: 'lazy', decoding: 'async', width: 480, height: 360 });
-  const media = el('div', { className: 'work-media' }, img);
-  const card = el('article', { className: 'work' }, media, body);
+  const media = el('div', { className: 'work-media' }, img, w.pinned && pinBadge());
+  const card = el('article', { className: cls }, media, body);
   const ids = [...(w.images ?? []), ...(w.certs ?? [])];
   if (ids.length > 1) cyclePhotos(w, ids, card, media, img);
   return card;
@@ -521,7 +532,7 @@ form.addEventListener('submit', async (e) => {
     busy(true, 'กำลังบันทึก…');
     const cover = imgs[0]?.src ?? certs[0]?.src;
     const thumb = cover ? await compress(await (await fetch(cover)).blob(), 480, 0.74) : '';
-    const data = { title, category: $('#f-category').value, rank: $('#f-rank').value.trim(), date, details: $('#f-details').value.trim(), links, thumb, images: imageIds, certs: certIds };
+    const data = { title, pinned: Boolean(editing?.pinned), category: $('#f-category').value, rank: $('#f-rank').value.trim(), date, details: $('#f-details').value.trim(), links, thumb, images: imageIds, certs: certIds };
     await setDoc(workRef, data);
     // Only after the work points at the new photo list, remove photos that were taken out.
     const keep = new Set([...imageIds, ...certIds]);
@@ -543,6 +554,21 @@ form.addEventListener('submit', async (e) => {
   render();
   toast(wasEditing ? 'บันทึกการแก้ไขแล้ว' : 'เพิ่มผลงานแล้ว');
 });
+
+// Only the pinned flag is written; the rest of the work stays as it is.
+async function togglePin(w, btn) {
+  btn.disabled = true;
+  try {
+    await setDoc(doc(workCol(), w.id), { pinned: !w.pinned }, { merge: true });
+  } catch (err) {
+    btn.disabled = false;
+    toast(SAVE_ERRORS[err.code] ?? 'ปักหมุดไม่สำเร็จ ลองอีกครั้ง');
+    return;
+  }
+  works = works.map((x) => (x.id === w.id ? { ...x, pinned: !w.pinned } : x));
+  render();
+  toast(w.pinned ? 'เลิกปักหมุดแล้ว' : 'ปักหมุดแล้ว');
+}
 
 async function removeWork(w) {
   if (!confirm(`ลบผลงาน “${w.title}” ใช่ไหม? ลบแล้วกู้คืนไม่ได้`)) return;
