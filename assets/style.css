@@ -132,7 +132,30 @@ body:has(.admin-fab:not([hidden])) .site-foot { padding-bottom: 5rem; } /* keep 
 
 /* ---------- Home ---------- */
 .home main { display: grid; align-content: center; }
-.hero { padding-block: clamp(3rem, 10vh, 7rem) clamp(4rem, 12vh, 8rem); }
+.hero { display: grid; align-items: center; gap: 2.5rem 3rem; padding-block: clamp(2.5rem, 8vh, 6rem) clamp(3rem, 10vh, 7rem); }
+@media (min-width: 52rem) {
+  .hero { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+  .hero .name { font-size: clamp(2.4rem, 5.6vw, 5.25rem); } /* leaves room for the photo */
+}
+/* Photo on a stitched circle; hovering swaps to the second pose */
+.hero-photo { position: relative; justify-self: center; width: min(78%, 24rem); }
+.hero-photo::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 96%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--thread-soft);
+  outline: 2px dashed var(--thread);
+  outline-offset: -12px;
+  translate: -50% 0;
+}
+.hero-photo img { position: relative; display: block; width: 100%; height: auto; transition: opacity .35s var(--ease); }
+.hero-photo .alt { position: absolute; inset: 0; opacity: 0; }
+.hero-photo:hover .alt { opacity: 1; }
+.hero-photo:hover img:not(.alt) { opacity: 0; }
 .hello { margin: 0 0 .9rem; }
 .bubble {
   position: relative;
@@ -268,6 +291,8 @@ body:has(.admin-fab:not([hidden])) .site-foot { padding-bottom: 5rem; } /* keep 
   color: var(--thread);
   font-size: 11cqi;
   font-weight: 700;
+  object-fit: cover;
+  object-position: top;
 }
 .id-info { min-width: 0; }
 .id-name { margin: 0; font-size: max(1.125rem, 5.4cqi); line-height: 1.25; }

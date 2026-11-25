@@ -47,6 +47,15 @@
         ],
         "createdAt": "2026-11-20T18:53:37.184Z",
         "reason": "Claude design decision: inherited from assets/style.css, where the hero name's background-clip text is a satin-stitch thread texture (embroidered school-shirt name), the page's one signature element"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "contact.html"
+        ],
+        "createdAt": "2026-11-25T14:41:13.343Z",
+        "reason": "Claude measured in browser: every .contact row has 28px padding-top/bottom between its border and content; detector reads the row's children as flush"
       }
     ]
   }
