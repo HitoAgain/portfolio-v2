@@ -37,9 +37,9 @@ jobs:
         run: |
           mkdir _site
           cp -r index.html works.html about.html contact.html assets _site/
-          # Stamp each deploy's commit on local CSS/JS links so browsers fetch the new files, not cached old ones.
+          # Stamp each deploy's commit on local CSS/JS/image links so browsers fetch the new files, not cached old ones.
           v=${GITHUB_SHA::7}
-          sed -i -E "s#(href|src)=\"assets/([a-z-]+\.(css|js))\"#\1=\"assets/\2?v=$v\"#g" _site/*.html
+          sed -i -E "s#(href|src)=\"assets/([a-z0-9/_-]+\.(css|js|webp|svg|png))\"#\1=\"assets/\2?v=$v\"#g" _site/*.html
           sed -i -E "s#from '\./([a-z-]+\.js)'#from './\1?v=$v'#g; s#import\('\./([a-z-]+\.js)'\)#import('./\1?v=$v')#g" _site/assets/works.js
 
       - uses: actions/configure-pages@v6

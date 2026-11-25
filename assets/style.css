@@ -136,24 +136,30 @@ body:has(.admin-fab:not([hidden])) .site-foot { padding-bottom: 5rem; } /* keep 
 .hero { display: grid; align-items: end; gap: 2rem 3rem; padding-top: clamp(2rem, 6vh, 4rem); }
 .hero-text { align-self: center; }
 @media (min-width: 52rem) {
-  .hero { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+  .hero { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
   .hero-text { padding-bottom: clamp(2rem, 8vh, 5rem); }
   .hero .name { font-size: clamp(2.4rem, 5.6vw, 5.25rem); } /* leaves room for the photo */
 }
-/* Photo on a stitched circle; hovering swaps to the second pose */
-.hero-photo { position: relative; justify-self: center; width: min(85%, 30rem, calc((100dvh - 10rem) * .75)); } /* as tall as the screen allows */
+/* Photo in front of a slowly turning stitched square; hovering swaps to the second pose */
+.hero-photo {
+  position: relative;
+  justify-self: center;
+  width: min(95%, 36rem, calc((100dvh - 8.5rem) * .75)); /* as tall as the space above the footer */
+  clip-path: inset(-50% -50% 0 -50%); /* the turning square's corners stop at the footer line */
+}
 .hero-photo::before {
   content: "";
   position: absolute;
   left: 50%;
-  bottom: 0;
+  bottom: 6%;
   width: 96%;
   aspect-ratio: 1;
-  border-radius: 50%;
+  border-radius: 32px;
   background: var(--thread-soft);
   outline: 2px dashed var(--thread);
   outline-offset: -12px;
   translate: -50% 0;
+  rotate: 8deg;
 }
 .hero-photo img { position: relative; display: block; width: 100%; height: auto; transition: opacity .35s var(--ease); }
 .hero-photo .alt { position: absolute; inset: 0; opacity: 0; }
@@ -205,23 +211,23 @@ body:has(.admin-fab:not([hidden])) .site-foot { padding-bottom: 5rem; } /* keep 
 .needle::before { content: ""; position: absolute; left: 50%; top: 5%; width: 40%; height: 9%; border-radius: 999px; background: var(--shirt); transform: translateX(-50%); }
 
 @media (prefers-reduced-motion: no-preference) {
-  .js .sew-text { clip-path: inset(-.4em 100% -.4em -.1em); animation: sew 2.2s steps(26, end) .3s forwards; }
+  .js .sew-text { clip-path: inset(-.4em 100% -.4em -.1em); animation: sew 1.4s steps(22, end) .2s forwards; }
   .js .needle {
     animation:
-      needle-run 2.2s steps(26, end) .3s forwards,
-      needle-bob 85ms linear .3s 26,
-      needle-out .4s ease 2.6s forwards;
+      needle-run 1.4s steps(22, end) .2s forwards,
+      needle-bob 64ms linear .2s 22,
+      needle-out .35s ease 1.6s forwards;
   }
   /* the hello pops up right after the name is sewn */
-  .js .bubble { opacity: 0; transform-origin: 1.4rem 100%; animation: pop .6s cubic-bezier(.3, 1.8, .5, 1) 2.6s forwards; }
-  .js .en-name, .js .actions { opacity: 0; animation: rise .65s cubic-bezier(.3, 1.6, .5, 1) 2.7s forwards; }
+  .js .bubble { opacity: 0; transform-origin: 1.4rem 100%; animation: pop .6s cubic-bezier(.3, 1.8, .5, 1) 1.65s forwards; }
+  .js .en-name, .js .actions { opacity: 0; animation: rise .65s cubic-bezier(.3, 1.6, .5, 1) 1.75s forwards; }
   /* the photo pops up with the hello, then its stitched circle turns slowly */
-  .js .hero-photo { opacity: 0; transform-origin: 50% 100%; animation: rise .8s cubic-bezier(.3, 1.5, .5, 1) 2.6s forwards; }
-  .hero-photo::before { animation: spin 50s linear infinite; }
-  .js .actions { animation-delay: 2.82s; }
+  .js .hero-photo { opacity: 0; transform-origin: 50% 100%; animation: rise .8s cubic-bezier(.3, 1.5, .5, 1) 1.65s forwards; }
+  .hero-photo::before { animation: spin 24s linear infinite; }
+  .js .actions { animation-delay: 1.87s; }
   .js:not(.fr) .sew-text, .js:not(.fr) .needle, .js:not(.fr) .bubble, .js:not(.fr) .en-name, .js:not(.fr) .actions, .js:not(.fr) .hero-photo { animation-play-state: paused; }
 }
-@keyframes spin { to { rotate: 360deg; } }
+@keyframes spin { from { rotate: 8deg; } to { rotate: 368deg; } }
 @keyframes rise { from { opacity: 0; transform: translateY(16px) scale(.94); } to { opacity: 1; transform: none; } }
 @keyframes pop { from { opacity: 0; transform: translateY(12px) scale(.4); } to { opacity: 1; transform: none; } }
 @keyframes sew { to { clip-path: inset(-.4em 0 -.4em -.1em); } }
