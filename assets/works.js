@@ -15,7 +15,7 @@ const { firebaseConfig, adminEmail } = await import('./firebase-config.js')
 const AUTH_SDK ='https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
 const MAX_DOC_CHARS = 950_000; // Firestore documents max out at 1 MiB
 const TESSERACT_URL = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js'; // OCR, loaded only by the admin
-const CATEGORIES = ['กิจกรรม', 'เกียรติบัตร', 'การอบรม'];
+const CATEGORIES = ['กิจกรรม', 'รางวัล', 'การอบรม'];
 const LINK_TYPES = ['ลิงก์นำเสนอ', 'วิดีโอ', 'เอกสาร / รายงาน', 'เว็บไซต์ / โปรเจกต์', 'โพสต์ / ข่าว', 'อื่นๆ'];
 
 // Local testing only: works.html?emulator on localhost talks to Firebase emulators, never the real project.
@@ -64,7 +64,9 @@ const imageCache = new Map(); // image id -> data URL
 
 async function fetchWorks() {
   const snap = await getDocs(workCol());
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  // Works saved before the rename used 'เกียรติบัตร' as a category; show them as 'รางวัล'.
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+    .map((w) => (w.category === 'เกียรติบัตร' ? { ...w, category: 'รางวัล' } : w));
 }
 
 // One read per image, only when someone opens a work.
