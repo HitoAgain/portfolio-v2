@@ -15,6 +15,7 @@ const { firebaseConfig, adminEmail } = await import('./firebase-config.js')
 const AUTH_SDK ='https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
 const MAX_DOC_CHARS = 950_000; // Firestore documents max out at 1 MiB
 const TESSERACT_URL = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js'; // OCR, loaded only by the admin
+const CATEGORIES = ['กิจกรรม', 'เกียรติบัตร', 'การอบรม'];
 const LINK_TYPES = ['ลิงก์นำเสนอ', 'วิดีโอ', 'เอกสาร / รายงาน', 'เว็บไซต์ / โปรเจกต์', 'โพสต์ / ข่าว', 'อื่นๆ'];
 
 // Local testing only: works.html?emulator on localhost talks to Firebase emulators, never the real project.
@@ -54,6 +55,7 @@ const guessLinkType = (u) => (
 
 let isAdmin = false;
 let works = [];
+let filter = null; // selected category, null = all
 
 // ---------- Firestore ----------
 const workCol = () => collection(db, 'works');
@@ -133,26 +135,35 @@ function render() {
       : 'ยังไม่มีผลงานในตอนนี้ แวะกลับมาดูใหม่เร็วๆ นี้นะครับ' }));
     return;
   }
-  const groups = new Map();
-  for (const w of sorted(works)) {
-    const y = parseDate(w.date).getFullYear() + 543;
-    if (!groups.has(y)) groups.set(y, []);
-    groups.get(y).push(w);
-  }
-  for (const [y, items] of groups) {
-    const sec = el('section', { className: 'year-group' },
-      el('h2', { className: 'year', id: `y${y}` }, `พ.ศ. ${y}`, el('small', { textContent: `${items.length} รายการ` })),
-      el('div', { className: 'cards' }, ...items.map(workCard)));
-    sec.setAttribute('aria-labelledby', `y${y}`);
-    listEl.append(sec);
-  }
+  // Category filter: only the cards are redrawn, so the pressed button keeps keyboard focus.
+  const cards = el('div', { className: 'cards' });
+  const chips = [null, ...CATEGORIES].map((c) => {
+    const n = c ? works.filter((w) => w.category === c).length : works.length;
+    const b = el('button', { type: 'button', className: 'chip' }, c ?? 'ทั้งหมด', el('span', { textContent: n }));
+    b.addEventListener('click', () => { filter = c; drawCards(); });
+    return b;
+  });
+  const drawCards = () => {
+    chips.forEach((b, i) => b.setAttribute('aria-pressed', String(filter === ([null, ...CATEGORIES][i]))));
+    const shown = sorted(works).filter((w) => !filter || w.category === filter);
+    cards.replaceChildren(...(shown.length ? shown.map(workCard) : [el('p', { className: 'empty', textContent: 'ยังไม่มีผลงานในหมวดนี้' })]));
+  };
+  const group = el('div', { className: 'chips' }, ...chips);
+  group.setAttribute('role', 'group');
+  group.setAttribute('aria-label', 'หมวดหมู่ผลงาน');
+  listEl.append(group, cards);
+  drawCards();
 }
+
+const workMeta = (w) => el('div', { className: 'work-meta' },
+  el('time', { className: 'work-date', dateTime: w.date, textContent: dateShort.format(parseDate(w.date)) }),
+  w.category && el('span', { className: 'work-cat', textContent: w.category }));
 
 function workCard(w) {
   const open = el('button', { type: 'button', className: 'work-open', textContent: w.title });
   open.addEventListener('click', () => openView(w));
   const body = el('div', { className: 'work-body' },
-    el('time', { className: 'work-date', dateTime: w.date, textContent: dateShort.format(parseDate(w.date)) }),
+    workMeta(w),
     el('h3', { className: 'work-title' }, open),
     w.rank && el('span', { className: 'patch', textContent: w.rank }),
     w.details && el('p', { className: 'work-excerpt', textContent: w.details }));
@@ -207,7 +218,9 @@ function openView(w) {
   const certIds = new Set(w.certs ?? []);
   const links = (w.links || []).map(toLink).filter((l) => safeUrl(l.url));
   const info = el('div', { className: 'view-info' }, ...[
-    el('time', { className: 'view-date', dateTime: w.date, textContent: dateLong.format(parseDate(w.date)) }),
+    el('div', { className: 'work-meta' },
+      el('time', { className: 'view-date', dateTime: w.date, textContent: dateLong.format(parseDate(w.date)) }),
+      w.category && el('span', { className: 'work-cat', textContent: w.category })),
     el('h2', { className: 'view-title', id: 'view-title', textContent: w.title }),
     w.rank && el('span', { className: 'patch', textContent: w.rank }),
     w.details && el('p', { className: 'view-details', textContent: w.details }),
@@ -318,6 +331,7 @@ async function openForm(w = null) {
   $('#f-rank').value = w?.rank ?? '';
   $('#f-date').value = w?.date ?? today();
   $('#f-details').value = w?.details ?? '';
+  $('#f-category').value = w?.category ?? CATEGORIES[0];
   linkRows.replaceChildren();
   (w?.links ?? []).map(toLink).forEach(addLinkRow);
   dateTouched = Boolean(w); // never overwrite a saved date with an OCR guess
@@ -505,7 +519,7 @@ form.addEventListener('submit', async (e) => {
     busy(true, 'กำลังบันทึก…');
     const cover = imgs[0]?.src ?? certs[0]?.src;
     const thumb = cover ? await compress(await (await fetch(cover)).blob(), 480, 0.74) : '';
-    const data = { title, rank: $('#f-rank').value.trim(), date, details: $('#f-details').value.trim(), links, thumb, images: imageIds, certs: certIds };
+    const data = { title, category: $('#f-category').value, rank: $('#f-rank').value.trim(), date, details: $('#f-details').value.trim(), links, thumb, images: imageIds, certs: certIds };
     await setDoc(workRef, data);
     // Only after the work points at the new photo list, remove photos that were taken out.
     const keep = new Set([...imageIds, ...certIds]);

@@ -200,56 +200,59 @@ body:has(.admin-fab:not([hidden])) .site-foot { padding-bottom: 5rem; } /* keep 
 .type.typed::after { animation: caret .9s steps(1) 3 forwards; } /* blink a few times, then go away */
 @keyframes caret { 50% { opacity: 0; } 100% { opacity: 0; } }
 
-/* About: a student ID card */
+/* About: a landscape student ID card (real ID-card proportions) hanging on a lanyard */
+.about-page { overflow-x: clip; } /* a swinging card must not cause sideways scrolling */
+.lanyard { --strap: 90px; position: relative; margin-top: 1.5rem; }
+@media (min-width: 52rem) {
+  .about-page { display: grid; grid-template-columns: minmax(0, .8fr) minmax(34rem, 1.4fr); align-items: start; }
+  .lanyard { --strap: 170px; margin-top: calc(-1 * clamp(2.5rem, 8vh, 4.5rem)); } /* strap starts at the navbar */
+}
 .id-card {
-  max-width: 42rem;
-  margin-top: 2rem;
-  border: 1px solid var(--seam);
+  position: relative;
+  container-type: inline-size; /* text inside scales with the card, like a printed card */
+  display: flex;
+  flex-direction: column;
+  width: min(34rem, 100%);
+  aspect-ratio: 85.6 / 54;
+  margin: 2rem auto 0;
+  border: 7px solid var(--shirt); /* the white plastic edge */
   border-radius: 22px;
   background: var(--shirt);
-  overflow: hidden;
-  box-shadow: 0 24px 50px -30px rgb(19 35 75 / .45);
+  outline: 1px solid var(--seam);
+  box-shadow: 0 26px 50px -28px rgb(19 35 75 / .55);
 }
-.id-top {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-  padding: 1.5rem clamp(1.25rem, 4vw, 2rem);
+.id-head {
+  padding: max(1.75rem, 6.5cqi) 4cqi 2.4cqi;
+  border-radius: 15px 15px 0 0;
   background: var(--thread);
   color: #fff;
+  font-size: max(.75rem, 2.9cqi);
+  font-weight: 600;
+  text-align: center;
   outline: 1.5px dashed rgb(255 255 255 / .55); /* stitched edge, like a sewn-on name patch */
-  outline-offset: -8px;
+  outline-offset: -6px;
 }
+.id-main { flex: 1; display: flex; align-items: center; gap: 5cqi; padding: 4cqi 5cqi; }
 .id-photo {
   display: grid;
   place-items: center;
   flex: none;
-  width: 4.5rem;
-  height: 5.5rem;
-  border-radius: 12px;
-  background: var(--shirt);
+  width: 24cqi;
+  aspect-ratio: 4 / 5;
+  border-radius: 2.5cqi;
+  background: var(--thread-soft);
   color: var(--thread);
-  font-size: 2.25rem;
+  font-size: 11cqi;
   font-weight: 700;
 }
-.id-name { margin: 0; font-size: clamp(1.5rem, 4.5vw, 2.1rem); line-height: 1.3; }
-.id-en { margin: 0; color: rgb(255 255 255 / .85); }
-.id-facts { display: grid; grid-template-columns: repeat(2, 1fr); margin: 0; border-bottom: 1px solid var(--seam); }
-@media (min-width: 36rem) { .id-facts { grid-template-columns: repeat(4, 1fr); } }
-.id-facts div { padding: 1rem clamp(1.25rem, 4vw, 2rem); }
-.id-facts dt, .id-label { color: var(--slate); font-size: .875rem; font-weight: 400; }
-.id-facts dd { margin: 0; font-weight: 600; }
-.id-edu { padding: 1.25rem clamp(1.25rem, 4vw, 2rem) 1.75rem; }
-.id-label { margin: 0 0 1rem; line-height: 1.5; }
+.id-info { min-width: 0; }
+.id-name { margin: 0; font-size: max(1.125rem, 5.4cqi); line-height: 1.25; }
+.id-en { margin: .1em 0 0; color: var(--slate); font-size: max(.8125rem, 2.8cqi); }
+.id-facts { display: grid; grid-template-columns: repeat(2, auto); justify-content: start; gap: 1.8cqi 5cqi; margin: 3cqi 0 0; }
+.id-facts dt { color: var(--slate); font-size: max(.6875rem, 2.3cqi); line-height: 1.5; }
+.id-facts dd { margin: 0; font-size: max(.8125rem, 2.9cqi); font-weight: 600; line-height: 1.4; }
+.id-facts small { display: block; color: var(--slate); font-size: max(.6875rem, 2.2cqi); font-weight: 400; }
 
-/* Lanyard: the card hangs on a strap and can be dragged (assets/lanyard.js adds .live) */
-.about-page { overflow-x: clip; } /* a flung card must not cause sideways scrolling */
-.lanyard { --strap: 90px; position: relative; margin-top: 1.5rem; }
-@media (min-width: 52rem) {
-  .about-page { display: grid; grid-template-columns: minmax(0, 1fr) minmax(24rem, 1.3fr); align-items: start; }
-  .lanyard { --strap: 190px; margin-top: calc(-1 * clamp(2.5rem, 8vh, 4.5rem)); } /* strap starts at the navbar */
-}
-.badge { width: min(20rem, 100%); margin-inline: auto; }
 .strap { display: none; }
 .lanyard.live .strap { display: block; position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .strap-band { fill: none; stroke: var(--thread); stroke-width: 16; stroke-linecap: round; stroke-linejoin: round; }
@@ -267,17 +270,11 @@ body:has(.admin-fab:not([hidden])) .site-foot { padding-bottom: 5rem; } /* keep 
   will-change: transform;
 }
 .lanyard.live .badge.grabbing { cursor: grabbing; }
-.badge { position: relative; overflow: visible; }
-.badge .id-top { flex-direction: column; padding-top: 2.5rem; border-radius: 21px 21px 0 0; text-align: center; }
-.badge .id-photo { width: 5.5rem; height: 6.5rem; font-size: 2.75rem; }
-.badge .id-facts { grid-template-columns: repeat(2, 1fr); }
-.badge .id-facts div { padding: .85rem 1.25rem; }
-.badge .id-edu { padding-inline: 1.25rem; }
 /* metal clip over the slot at the top of the card */
 .badge::before {
   content: "";
   position: absolute;
-  top: -14px;
+  top: -22px;
   left: 50%;
   z-index: 2;
   width: 2.75rem;
@@ -290,7 +287,7 @@ body:has(.admin-fab:not([hidden])) .site-foot { padding-bottom: 5rem; } /* keep 
 .badge::after {
   content: "";
   position: absolute;
-  top: 1.1rem;
+  top: .7rem;
   left: 50%;
   width: 3.25rem;
   height: .55rem;
@@ -298,34 +295,6 @@ body:has(.admin-fab:not([hidden])) .site-foot { padding-bottom: 5rem; } /* keep 
   background: rgb(255 255 255 / .9);
   translate: -50% 0;
 }
-.timeline { position: relative; margin: 0; padding: 0; list-style: none; }
-.timeline li { position: relative; padding: 0 0 2.25rem 2.5rem; }
-.timeline li:last-child { padding-bottom: 0; }
-.timeline li::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: .45em;
-  width: 1rem;
-  height: 1rem;
-  border: 2px solid var(--thread);
-  border-radius: 50%;
-  background: var(--shirt);
-}
-.timeline li.now::before { background: var(--thread); box-shadow: 0 0 0 4px var(--thread-soft); }
-.timeline li:not(:last-child)::after {
-  content: "";
-  position: absolute;
-  left: calc(.5rem - 1px);
-  top: calc(.45em + 1.35rem);
-  bottom: .35rem;
-  width: 2px;
-  color: var(--thread);
-  background: repeating-linear-gradient(180deg, currentColor 0 7px, transparent 7px 11px);
-}
-.tl-stage { display: block; font-size: 1.1875rem; font-weight: 600; }
-.tl-school { color: var(--slate); }
-.tl-now { display: inline-block; margin-left: .5rem; padding: 0 .6rem; border-radius: 999px; background: var(--thread-soft); color: var(--thread-deep); font-size: .875rem; font-weight: 600; }
 
 /* Contact */
 .contact-list { margin: 3rem 0 0; padding: 0; list-style: none; }
@@ -365,9 +334,15 @@ body:has(.admin-fab:not([hidden])) .site-foot { padding-bottom: 5rem; } /* keep 
 .empty { margin: 3rem 0 0; padding: 2.5rem 1.5rem; border: 1px solid var(--seam); border-radius: 14px; color: var(--slate); text-align: center; }
 .empty p { margin: 0 0 1rem; }
 .img-loading { margin: 0; padding: 2.5rem 1rem; border-radius: 8px; background: var(--cotton); color: var(--slate); text-align: center; }
-.year-group { margin-top: 3rem; }
-.year { display: flex; align-items: baseline; gap: .9rem; margin: 0 0 .5rem; font-size: 1.75rem; line-height: 1.3; font-variant-numeric: tabular-nums; }
-.year small { color: var(--slate); font-size: .9375rem; font-weight: 400; }
+.chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.75rem; }
+.chip { display: inline-flex; align-items: center; gap: .45rem; min-height: 2.5rem; padding: .3rem 1rem; border: 1.5px solid var(--seam); border-radius: 999px; background: var(--shirt); color: var(--navy); font: inherit; font-size: .9688rem; font-weight: 500; cursor: pointer; transition: border-color .2s, background-color .2s, color .2s; }
+.chip span { color: var(--slate); font-size: .8125rem; font-variant-numeric: tabular-nums; }
+.chip:hover { border-color: var(--thread); }
+.chip[aria-pressed="true"] { border-color: var(--thread); background: var(--thread); color: #fff; }
+.chip[aria-pressed="true"] span { color: rgb(255 255 255 / .8); }
+.cards .empty { grid-column: 1 / -1; margin: 0; }
+.work-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .25rem .75rem; }
+.work-cat { padding: 0 .6rem; border-radius: 999px; background: var(--thread-soft); color: var(--thread-deep); font-size: .8125rem; font-weight: 600; line-height: 1.8; }
 
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); gap: 1.25rem; margin-top: 1.25rem; }
 .work {

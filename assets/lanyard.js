@@ -11,9 +11,9 @@
   const N = 14;          // rope segments
   const ITER = 16;       // constraint passes per step (higher = stiffer strap)
   const GRAVITY = 0.5;   // px per step²
-  const DAMP = 0.975;    // air drag per step
-  const MAX_V = 18;      // px per step, so a hard throw swings the card instead of looping it over the top
-  const MAX_TILT = 1.2;  // rad (~70°): a badge swings, it doesn't spin
+  const DAMP = 0.955;    // air drag per step (lower = settles sooner)
+  const MAX_V = 11;      // px per step, so a hard throw swings the card instead of looping it over the top
+  const MAX_TILT = 0.55; // rad (~30°): a badge sways, it doesn't spin
   let L = 0, seg = 0, ax = 0, cardW = 0, pts = [], drag = null, raf = 0, last = 0, tilt = 0, tiltGap = 0;
 
   function layout() {
@@ -113,7 +113,7 @@
     if (!drag) return;
     const end = pts[N];
     if (performance.now() - drag.t > 80) { end.px = end.x; end.py = end.y; } // held still: just drop it
-    else { end.px = end.x - (end.x - end.px) * 0.6; end.py = end.y - (end.y - end.py) * 0.6; } // soften the throw
+    else { end.px = end.x - (end.x - end.px) * 0.4; end.py = end.y - (end.y - end.py) * 0.4; } // soften the throw
     drag = null;
     card.classList.remove('grabbing');
     wake();
@@ -123,7 +123,7 @@
 
   stage.classList.add('live');
   layout();
-  pts = hang(still ? 0 : Math.min(160, ax * 0.6));
+  pts = hang(still ? 0 : Math.min(70, ax * 0.3)); // small entrance sway
   if (still) {
     pts = hang(0);
     pts.forEach((p, i) => { p.y = (i / N) * L; p.py = p.y; });
