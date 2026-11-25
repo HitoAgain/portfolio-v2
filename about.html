@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300..700&display=swap">
 <link rel="stylesheet" href="assets/style.css">
 <script src="assets/site.js" defer></script>
+<script src="assets/lanyard.js" defer></script>
 <script type="speculationrules">{"prefetch":[{"where":{"href_matches":"/*.html"},"eagerness":"moderate"}]}</script>
 </head>
 <body>
@@ -32,10 +33,12 @@
 </div>
 </header>
 
-<main id="main" class="page wrap">
+<main id="main" class="page wrap about-page">
   <h1 class="page-title">เกี่ยวกับผม</h1>
 
-  <article class="id-card" aria-labelledby="id-name">
+  <div id="lanyard" class="lanyard">
+  <svg class="strap" aria-hidden="true"><path class="strap-band"/><path class="strap-stitch"/><circle class="strap-pin" r="6"/></svg>
+  <article class="id-card badge" aria-labelledby="id-name">
     <header class="id-top">
       <span class="id-photo" aria-hidden="true">อ</span>
       <div>
@@ -65,6 +68,7 @@
     </ol>
     </section>
   </article>
+  </div>
 </main>
 
 <footer class="site-foot wrap">

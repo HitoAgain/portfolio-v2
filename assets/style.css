@@ -241,6 +241,63 @@ body:has(.admin-fab:not([hidden])) .site-foot { padding-bottom: 5rem; } /* keep 
 .id-facts dd { margin: 0; font-weight: 600; }
 .id-edu { padding: 1.25rem clamp(1.25rem, 4vw, 2rem) 1.75rem; }
 .id-label { margin: 0 0 1rem; line-height: 1.5; }
+
+/* Lanyard: the card hangs on a strap and can be dragged (assets/lanyard.js adds .live) */
+.about-page { overflow-x: clip; } /* a flung card must not cause sideways scrolling */
+.lanyard { --strap: 90px; position: relative; margin-top: 1.5rem; }
+@media (min-width: 52rem) {
+  .about-page { display: grid; grid-template-columns: minmax(0, 1fr) minmax(24rem, 1.3fr); align-items: start; }
+  .lanyard { --strap: 190px; margin-top: calc(-1 * clamp(2.5rem, 8vh, 4.5rem)); } /* strap starts at the navbar */
+}
+.badge { width: min(20rem, 100%); margin-inline: auto; }
+.strap { display: none; }
+.lanyard.live .strap { display: block; position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.strap-band { fill: none; stroke: var(--thread); stroke-width: 16; stroke-linecap: round; stroke-linejoin: round; }
+.strap-stitch { fill: none; stroke: rgb(255 255 255 / .75); stroke-width: 1.5; stroke-dasharray: 6 5; }
+.strap-pin { fill: var(--navy); }
+.lanyard.live .badge {
+  position: absolute;
+  left: 0;
+  top: 0;
+  margin: 0;
+  transform-origin: 50% 0;
+  cursor: grab;
+  user-select: none;
+  touch-action: pan-y; /* sideways drags swing the card, vertical ones still scroll the page */
+  will-change: transform;
+}
+.lanyard.live .badge.grabbing { cursor: grabbing; }
+.badge { position: relative; overflow: visible; }
+.badge .id-top { flex-direction: column; padding-top: 2.5rem; border-radius: 21px 21px 0 0; text-align: center; }
+.badge .id-photo { width: 5.5rem; height: 6.5rem; font-size: 2.75rem; }
+.badge .id-facts { grid-template-columns: repeat(2, 1fr); }
+.badge .id-facts div { padding: .85rem 1.25rem; }
+.badge .id-edu { padding-inline: 1.25rem; }
+/* metal clip over the slot at the top of the card */
+.badge::before {
+  content: "";
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  z-index: 2;
+  width: 2.75rem;
+  height: 1.6rem;
+  border-radius: 7px;
+  background: linear-gradient(180deg, #e9edf3, #9aa4b5 60%, #c8cfda);
+  box-shadow: 0 2px 4px rgb(19 35 75 / .35), inset 0 1px 0 #fff;
+  translate: -50% 0;
+}
+.badge::after {
+  content: "";
+  position: absolute;
+  top: 1.1rem;
+  left: 50%;
+  width: 3.25rem;
+  height: .55rem;
+  border-radius: 999px;
+  background: rgb(255 255 255 / .9);
+  translate: -50% 0;
+}
 .timeline { position: relative; margin: 0; padding: 0; list-style: none; }
 .timeline li { position: relative; padding: 0 0 2.25rem 2.5rem; }
 .timeline li:last-child { padding-bottom: 0; }
