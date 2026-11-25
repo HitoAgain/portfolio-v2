@@ -6,6 +6,10 @@ if [ -z "$FIREBASE_CONFIG_JS" ]; then
   echo "Missing FIREBASE_CONFIG_JS: add it in Vercel > Project > Settings > Environment Variables" >&2
   exit 1
 fi
+case "$FIREBASE_CONFIG_JS" in
+  *apiKey*) ;;
+  *) echo "FIREBASE_CONFIG_JS must be the CONTENTS of assets/firebase-config.js, not a file name" >&2; exit 1 ;;
+esac
 rm -rf _site
 mkdir _site
 cp -r index.html works.html about.html contact.html assets _site/
